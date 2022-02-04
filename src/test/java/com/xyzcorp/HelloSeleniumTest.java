@@ -14,48 +14,49 @@ import org.openqa.selenium.chrome.ChromeDriver;
 
 public class HelloSeleniumTest {
 
-    // Using a chrome webdriver for this example
     private static ChromeDriver chromeDriver;
 
+    /**
+     * Manually sets ups chrome driver property and instantiates a new driver.
+     */
     @BeforeAll
     public static void setup() {
-        // Setting up property manually. A true pain in the you know what. An absolute
-        // path too at that
         System.setProperty("webdriver.chrome.driver",
                 "C:\\Users\\ernest.nguyen\\drivers\\chrome\\98\\chromedriver_win32\\chromedriver.exe");
-
-        // Instantiate a new driver
         chromeDriver = new ChromeDriver();
     }
 
+    /**
+     * This test will go to Google and search for BDD.
+     * It will ensure that it lands on the Wiki page.
+     */
     @Test
     public void testSearchAndGoToBddWiki() {
-        // Open google.com
         String rootURL = "https://www.google.com/";
         chromeDriver.get(rootURL);
         chromeDriver.manage().window().setSize(new Dimension(945, 1020));
 
-        // Click search box, enter search term and search
         String searchTerm = "Behavior-driven development";
         chromeDriver.findElement(By.name("q")).click();
         chromeDriver.findElement(By.name("q")).sendKeys(searchTerm);
         chromeDriver.findElement(By.name("q")).sendKeys(Keys.ENTER);
 
-        // Click the first link: it should be a wiki link
         WebElement wikiLink = chromeDriver.findElement(By
                 .cssSelector("#rso > div:nth-child(1) > div.g.tF2Cxc > div > div.NJo7tc.Z26q7c.jGGQ5e > div > a > h3"));
         assertTrue(wikiLink.getText().contains("Wikipedia"));
         wikiLink.click();
 
-        // Assert that the title of the wiki page is "Behavior-driven development"
         String wikiPageTitle = chromeDriver.findElement(By.id("firstHeading")).getText();
         assertTrue(wikiPageTitle.equals(searchTerm));
 
     }
 
+    /**
+     * Closes the webdriver after all test cases.
+     */
     @AfterAll
     public static void cleanup() {
-        chromeDriver.close(); // ALWAYS
+        chromeDriver.close();
     }
 
 }
