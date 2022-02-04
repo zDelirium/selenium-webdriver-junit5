@@ -46,7 +46,7 @@ public class HelloSeleniumTest {
         wikiLink.click();
 
         // Assert that the title of the wiki page is "Behavior-driven development"
-        String wikiPageTitle = chromeDriver.findElement(By.cssSelector("#firstHeading")).getText();
+        String wikiPageTitle = chromeDriver.findElement(By.id("firstHeading")).getText();
         assertTrue(wikiPageTitle.equals(searchTerm));
         
         
