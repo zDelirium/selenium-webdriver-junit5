@@ -2,27 +2,38 @@ package com.xyzcorp;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
+
 public class HelloSeleniumTest {
 
-    private static ChromeDriver chromeDriver;
+    
+    WebDriver chromeDriver;
 
     /**
-     * Manually sets ups chrome driver property and instantiates a new driver.
+     * Automatically sets ups chrome driver
      */
     @BeforeAll
-    public static void setup() {
-        System.setProperty("webdriver.chrome.driver",
-                "C:\\Users\\ernest.nguyen\\drivers\\chrome\\98\\chromedriver_win32\\chromedriver.exe");
+    public static void setupClass() {
+        WebDriverManager.chromedriver().setup();
+    }
+
+    /**
+     * Create a new webdriver instance every test
+     */
+    @BeforeEach
+    public void setup() {
         chromeDriver = new ChromeDriver();
     }
 
@@ -52,11 +63,11 @@ public class HelloSeleniumTest {
     }
 
     /**
-     * Closes the webdriver after all test cases.
+     * Quit webdriver after every test
      */
-    @AfterAll
-    public static void cleanup() {
-        chromeDriver.close();
+    @AfterEach
+    public void teardown() {
+        chromeDriver.quit();
     }
 
 }
