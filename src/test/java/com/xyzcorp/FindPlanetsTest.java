@@ -14,7 +14,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.support.locators.RelativeLocator;
 import org.openqa.selenium.support.locators.RelativeLocator.RelativeBy;
@@ -56,9 +55,19 @@ public class FindPlanetsTest {
 
     }
 
-    // TODO get diameters of all planet in the Solar System without directly accessing the diameters itself in the Planet wiki page
+    /**
+     * Searches for the diameter of Earth without accessing it directly in the Solar System wiki page
+     */
     @Test
-    public void testGetAllSolarSystemPlanetDiameters() {
+    public void testGetAbsoluteEarthDiameterInSolarSystemWikiPage() {
+        String sutURL = "https://en.wikipedia.org/wiki/Solar_System";
+        driver.get(sutURL);
+        driver.manage().window().setSize(new Dimension(945, 1020));
+
+        WebElement earthTr = driver.findElement(By.xpath("//th[contains(text(), 'Earth')][1]"));
+        RelativeBy relativeBy = RelativeLocator.with(By.tagName("td"));
+        WebElement earthDiameter = driver.findElement(relativeBy.near(earthTr));
+        System.out.println("The diameter of the Earth is " + earthDiameter.getText() + " km");
 
     }
 
