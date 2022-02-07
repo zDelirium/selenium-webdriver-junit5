@@ -2,9 +2,13 @@ package com.xyzcorp;
 
 import static java.lang.invoke.MethodHandles.lookup;
 import static org.slf4j.LoggerFactory.getLogger;
+
+import java.util.List;
+
 import org.slf4j.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,8 +48,6 @@ public class FindPlanetsTest {
         driver.get(sutURL);
         driver.manage().window().setSize(new Dimension(945, 1020));
         
-        //WebElement earthLink = driver.findElement(new ByAll(By.cssSelector("td > a[title=\"Earth\"]"), By.linkText("Earth")));
-        // TODO figure out a more solid way to get the earth link
         WebElement earthLink = driver.findElements(By.cssSelector("td > a[title=\"Earth\"]")).get(1);
         assertThat(earthLink.getText().equals("Earth"));
 
@@ -69,6 +71,24 @@ public class FindPlanetsTest {
         WebElement earthDiameter = driver.findElement(relativeBy.near(earthTr));
         System.out.println("The diameter of the Earth is " + earthDiameter.getText() + " km");
 
+    }
+
+    /**
+     * Get absolute diameters of all major bodies (Sun + planets) in the Solar System wiki page
+     */
+    @Test
+    public void testGetAllSolarSystemBodiesDiameters() {
+        String sutURL = "https://en.wikipedia.org/wiki/Solar_System";
+        driver.get(sutURL);
+        driver.manage().window().setSize(new Dimension(945, 1020));
+
+        List<WebElement> bodies = driver.findElements(By.xpath("//*[@id=\"mw-content-text\"]/div[1]/table[3]/tbody/tr/th"));
+        List<WebElement> diameters = driver.findElements(By.xpath("//*[@id=\"mw-content-text\"]/div[1]/table[3]/tbody/tr/td[1]"));
+        assertEquals(bodies.size(), diameters.size());
+
+        for (int i = 0; i < bodies.size(); i++) {
+            System.out.println("The diameter of " + bodies.get(i).getText().strip() + " is " + diameters.get(i).getText().strip() + " km");
+        }
     }
 
     @AfterEach
