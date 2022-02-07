@@ -1,6 +1,6 @@
 package com.xyzcorp;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,8 +43,8 @@ public class HelloSeleniumTest {
      */
     @Test
     public void testSearchAndGoToBddWiki() {
-        String rootURL = "https://www.google.com/";
-        chromeDriver.get(rootURL);
+        String sutURL = "https://www.google.com/";
+        chromeDriver.get(sutURL);
         chromeDriver.manage().window().setSize(new Dimension(945, 1020));
 
         String searchTerm = "Behavior-driven development";
@@ -54,11 +54,11 @@ public class HelloSeleniumTest {
 
         WebElement wikiLink = chromeDriver.findElement(By
                 .cssSelector("#rso > div:nth-child(1) > div.g.tF2Cxc > div > div.NJo7tc.Z26q7c.jGGQ5e > div > a > h3"));
-        assertTrue(wikiLink.getText().contains("Wikipedia"));
+        assertThat(wikiLink.getText().contains("Wikipedia"));
         wikiLink.click();
 
         String wikiPageTitle = chromeDriver.findElement(By.id("firstHeading")).getText();
-        assertTrue(wikiPageTitle.equals(searchTerm));
+        assertThat(wikiPageTitle.equals(searchTerm));
 
     }
 
