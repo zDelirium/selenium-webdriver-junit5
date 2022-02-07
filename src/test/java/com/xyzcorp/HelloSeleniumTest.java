@@ -52,8 +52,10 @@ public class HelloSeleniumTest {
         chromeDriver.findElement(By.name("q")).sendKeys(searchTerm);
         chromeDriver.findElement(By.name("q")).sendKeys(Keys.ENTER);
 
-        WebElement wikiLink = chromeDriver.findElement(By
-                .cssSelector("#rso > div:nth-child(1) > div.g.tF2Cxc > div > div.NJo7tc.Z26q7c.jGGQ5e > div > a > h3"));
+        // TODO Change findElement to link by text (or partial)
+        //WebElement wikiLink = chromeDriver.findElement(By
+        //        .cssSelector("#rso > div:nth-child(1) > div.g.tF2Cxc > div > div.NJo7tc.Z26q7c.jGGQ5e > div > a > h3"));
+        WebElement wikiLink = chromeDriver.findElement(By.partialLinkText("Wikipedia"));
         assertThat(wikiLink.getText().contains("Wikipedia"));
         wikiLink.click();
 
