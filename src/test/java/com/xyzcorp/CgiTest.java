@@ -2,6 +2,7 @@ package com.xyzcorp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -18,10 +19,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.WebDriver.Options;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -49,12 +52,17 @@ public class CgiTest {
      */
     @BeforeEach
     void setup() throws IOException {
+        // Load variables from properties file
         InputStream resourceAsStream = this.getClass().getResourceAsStream("/cgi-test-config.properties");
         properties = new Properties();
         properties.load(resourceAsStream);
     
+        // Maximise window of a new ChromeDriver instance
         driver = new ChromeDriver();
         driver.manage().window().maximize();
+
+        // Go to cgi.com homepage
+        driver.get(properties.getProperty("sut-url"));
 
     }
 
@@ -64,23 +72,30 @@ public class CgiTest {
      */
     @Test
     public void testAcceptAllCGICookies() {
-        driver.get(properties.getProperty("sut-url"));
-
         Options options = driver.manage();
 
+        // Get the number of cookies before accepting all cookies
         int beforeAcceptCookiesNb = options.getCookies().size();
         log.debug("There are {} cookies before accepting all cookies on cgi.com", beforeAcceptCookiesNb);
 
-        driver.findElement(By.xpath(properties.getProperty("accept-cookies-button-xpath"))).click();;
+        // Accept all cookies
+        driver.findElement(By.xpath(properties.getProperty("accept-cookies-button-xpath"))).click();
 
+        // Get the number of cookies after accepting all cookies
         Set<Cookie> afterCookies = options.getCookies();
         int afterAcceptCookiesNb = afterCookies.size();
         log.debug("There are {} cookies after accepting all cookies on cgi.com", afterAcceptCookiesNb);
         
+        // Assert that there are more cookies than there was initially
         assertThat(afterAcceptCookiesNb).isGreaterThan(beforeAcceptCookiesNb); 
+
+        // Assert that there is a cookie-agreed-categories cookie
         assertThat(options.getCookieNamed(properties.getProperty("cookie-agreed-categories-name"))).isNotNull();
+
+        // Assert that all cookies were accepted
         assertThat(options.getCookieNamed(properties.getProperty("cookie-agreed-name")).getValue()).isEqualTo(properties.getProperty("cookie-agreed-value"));
 
+        // Prints all cookies in the logs
         for (Cookie cookie: afterCookies) {
             log.debug("Cookie pair: {}={}", cookie.getName(), cookie.getValue());
         }
@@ -93,14 +108,16 @@ public class CgiTest {
      */
     @Test
     public void testDeclineAllCGICookies() {
-        driver.get(properties.getProperty("sut-url"));
 
         Options options = driver.manage();
 
-        WebElement declineCookieButton = driver.findElement(By.xpath(properties.getProperty("decline-cookies-button-xpath")));
-        declineCookieButton.click();
+        // Decline all cookies
+        driver.findElement(By.xpath(properties.getProperty("decline-cookies-button-xpath"))).click();
 
+        // Assert that there is no cookie-agreed-categories-cookie
         assertThat(options.getCookieNamed(properties.getProperty("cookie-agreed-categories-name"))).isNull();
+
+        // Assert that all non-required cookies were declined
         assertThat(options.getCookieNamed(properties.getProperty("cookie-agreed-name")).getValue()).isEqualTo(properties.getProperty("cookie-not-agreed-value"));
     }
 
@@ -111,25 +128,67 @@ public class CgiTest {
      */
     @Test
     public void testAccessCGINoCookiePopup() throws NumberFormatException, InterruptedException {
+        // Go to cgi.com homepage
         driver.get(properties.getProperty("sut-url"));
 
         Options options = driver.manage();
-
+        // Add all the necessary cookies
         Set<Cookie> cookies = setupCookies();
         for (Cookie cookie : cookies) {
             log.debug("Cookie pair added: {}={}", cookie.getName(), cookie.getValue());
             options.addCookie(cookie);
         }
 
+        // Refresh cgi.com homepage
         driver.navigate().refresh();
-        //driver.get(properties.getProperty("sut-url"));
+
+        // Wait and assert that the cookie popup does not appear
         Thread.sleep(Long.parseLong(properties.getProperty("default-sleep-time")));
         assertThat(driver.findElements(By.id(properties.getProperty("cookie-popup-id")))).isEmpty();;
 
     }
 
+    @Test
+    public void testFrenchTranslation() {
+
+        String enLang = "en", frLang = "fr";
+        String languageSwitcherDivElement = "language-switcher-div-id";
+        String switchToFRText = "switch-to-fr-link-text";
+
+
+        // Go to cgi.com
+        driver.get(properties.getProperty("sut-url"));
+
+        // Bypass cookies (accepted)
+        driver.findElement(By.xpath(properties.getProperty("accept-cookies-button-xpath"))).click();
+
+        // Assert that current language is English
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(enLang);
+        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(enLang);
+
+        // Switch to French and assert that it did so
+        driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).click();
+        driver.findElement(By.linkText(properties.getProperty(switchToFRText))).click();
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(frLang);
+        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(frLang);
+
+        // Make a search (in French)
+        driver.findElement(By.xpath(properties.getProperty("main-navbar-expand-search-bar-button-xpath"))).click();
+        WebElement searchBar = driver.findElement(By.id(properties.getProperty("main-navbar-search-bar-input-id")));
+        searchBar.sendKeys(properties.getProperty("fr-search-value"));
+        searchBar.sendKeys(Keys.ENTER);
+
+        // Wait until the search results div load
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(Integer.parseInt(properties.getProperty("default-max-wait-time"))));
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id(properties.getProperty("search-results-div-id"))));
+
+        // Assert that it is still in French
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(frLang);
+        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(frLang);
+    }
+
     /**
-     * Closes down every test as to minimize the risk of 
+     * Closes down every test as to minimize memory management risk
      */
     @AfterEach
     void teardown() {
