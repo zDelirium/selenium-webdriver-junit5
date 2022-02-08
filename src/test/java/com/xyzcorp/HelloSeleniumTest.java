@@ -2,6 +2,10 @@ package com.xyzcorp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +22,6 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class HelloSeleniumTest {
 
-    
     WebDriver chromeDriver;
 
     /**
@@ -43,23 +46,28 @@ public class HelloSeleniumTest {
      */
     @Test
     public void testSearchAndGoToBddWiki() {
-        String sutURL = "https://www.google.com/";
-        chromeDriver.get(sutURL);
+        InputStream resourceAsStream = this.getClass().getResourceAsStream("/hello-selenium-test-config.properties");
+        Properties properties = new Properties();
+        try {
+            properties.load(resourceAsStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        chromeDriver.get(properties.getProperty("bdd.sut-url"));
         chromeDriver.manage().window().setSize(new Dimension(945, 1020));
 
-        String searchTerm = "Behavior-driven development";
+        String searchTerm = properties.getProperty("bdd.search-term");
         chromeDriver.findElement(By.name("q")).click();
         chromeDriver.findElement(By.name("q")).sendKeys(searchTerm);
         chromeDriver.findElement(By.name("q")).sendKeys(Keys.ENTER);
 
-        // TODO Change findElement to link by text (or partial)
-        //WebElement wikiLink = chromeDriver.findElement(By
-        //        .cssSelector("#rso > div:nth-child(1) > div.g.tF2Cxc > div > div.NJo7tc.Z26q7c.jGGQ5e > div > a > h3"));
-        WebElement wikiLink = chromeDriver.findElement(By.partialLinkText("Wikipedia"));
-        assertThat(wikiLink.getText().contains("Wikipedia"));
+        String partialLinkText = properties.getProperty("bdd.partial-link-text");
+        WebElement wikiLink = chromeDriver.findElement(By.partialLinkText(partialLinkText));
+        assertThat(wikiLink.getText().contains(partialLinkText));
         wikiLink.click();
 
-        String wikiPageTitle = chromeDriver.findElement(By.id("firstHeading")).getText();
+        String wikiPageTitle = chromeDriver.findElement(By.id(properties.getProperty("bdd.wiki-page-title-id"))).getText();
         assertThat(wikiPageTitle.equals(searchTerm));
 
     }
