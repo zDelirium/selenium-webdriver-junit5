@@ -148,6 +148,10 @@ public class CgiTest {
 
     }
 
+    /**
+     * Goes to CGI.com, validates that it starts in English, switch to French,
+     * makes a search and validates that the page is still in French
+     */
     @Test
     public void testFrenchTranslation() {
 
