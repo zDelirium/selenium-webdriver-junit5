@@ -73,14 +73,9 @@ public class CgiTest {
      */
     @AfterEach
     void teardown() {
-    
-        // if (properties != null) {
-        //     properties = null;
-        // }
         if (driver != null) {
             driver.quit();
         }
-    
     }
 
     /**
