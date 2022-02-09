@@ -21,9 +21,9 @@ public class CGIPage {
     static final Logger log = getLogger(lookup().lookupClass());
 
     /**
-     * Instantiates a new CGIPageObj by 
-     * @param driver
-     * @param properties
+     * Instantiates a new CGIPage object and imports the webdriver and properties object 
+     * @param driver webdriver
+     * @param properties config variables file
      */
     public CGIPage(WebDriver driver, Properties properties) {
         this.driver = driver;

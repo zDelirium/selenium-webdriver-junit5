@@ -41,7 +41,7 @@ public class CgiTest {
      */
     @BeforeAll
     static void setupClass() {
-        WebDriverManager.chromedriver().setup();
+        WebDriverManager.getInstance("chrome").setup();
     }
     
     /**
