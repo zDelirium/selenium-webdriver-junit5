@@ -142,23 +142,14 @@ public class CgiTest {
     }
 
     /**
-     * Tests bypassing the cookie popup window.
+     * Tests bypassing the cookie popup window by making sure that the cookie popup does not reappear again after adding the cookies
      * @throws NumberFormatException
      * @throws InterruptedException
      */
     @Test
     public void testAccessCGINoCookiePopup() throws NumberFormatException, InterruptedException {
 
-        Options options = driver.manage();
-        // Add all the necessary cookies
-        Set<Cookie> cookies = setupCookies();
-        for (Cookie cookie : cookies) {
-            log.debug("Cookie pair added: {}={}", cookie.getName(), cookie.getValue());
-            options.addCookie(cookie);
-        }
-
-        // Refresh cgi.com homepage
-        driver.navigate().refresh();
+        bypassCookiesPopup();
 
         // Wait and assert that the cookie popup does not appear
         Thread.sleep(Duration.ofSeconds(Integer.parseInt(properties.getProperty("default-sleep-time"))).toMillis());
@@ -166,6 +157,7 @@ public class CgiTest {
 
     }
 
+    
     /**
      * Goes to CGI.com, validates that it starts in English, switch to French,
      * makes a search and validates that the page is still in French
@@ -174,56 +166,43 @@ public class CgiTest {
     public void testFrenchTranslation() {
 
         String enLang = "en-lang", frLang = "fr-lang";
-        String languageSwitcherDivElement = "language-switcher-div-id";
-        String switchToFRText = "switch-to-fr-link-text";
-
-        // Go to cgi.com
-        driver.get(properties.getProperty("sut-url"));
-
-        // Bypass cookies (accepted)
-        driver.findElement(By.xpath(properties.getProperty("accept-cookies-button-xpath"))).click();
-
+        
+        // Bypass cookies 
+        bypassCookiesPopup();
+        
         // Assert that current language is English
-        assertLanguage(enLang);
-
+        assertLanguage(properties.getProperty(enLang));
+        
         // Switch to French and assert that it did so
-        driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).click();
-        driver.findElement(By.linkText(properties.getProperty(switchToFRText))).click();
-        assertLanguage(frLang);
-
+        switchToLanguage(properties.getProperty("switch-to-fr-link-text"));
+        assertLanguage(properties.getProperty(frLang));
+        
         // Make a search (in French)
         driver.findElement(By.xpath(properties.getProperty("main-navbar-expand-search-bar-button-xpath"))).click();
         WebElement searchBar = driver.findElement(By.id(properties.getProperty("main-navbar-search-bar-input-id")));
         searchBar.sendKeys(properties.getProperty("fr-search-value"));
         searchBar.sendKeys(Keys.ENTER);
-
+        
         // Wait until the search results div load
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(Integer.parseInt(properties.getProperty("default-max-wait-time"))));
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id(properties.getProperty("search-results-div-id"))));
-
+        
         // Assert that it is still in French
-        assertLanguage(frLang);
-
+        assertLanguage(properties.getProperty(frLang));
+        
     }
 
+    
     /**
-     * Asserts that the language of website is the one that it should be
-     * @param lang The language of interest
+     * Bypasses the cookie popup window by adding the cookies to the webdriver manually
      */
-    private void assertLanguage(String lang) {
-        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(lang));
-        assertThat(driver.findElement(By.id(properties.getProperty("language-switcher-div-id"))).getText()).isEqualToIgnoringCase(properties.getProperty(lang));
-    }
-
-    /**
-     * Manually sets up cookies that are necessary for bypassing cgi.com cookies popup
-     * Not a good way to go at it to be honest
-     * @return A set of all accepted cgi cookies
-     */
-    private Set<Cookie> setupCookies() {
-
+    private void bypassCookiesPopup() {
+        
+        Options options = driver.manage();
+        
+        // Setup the necessary cookies manually
         Set<Cookie> cookies = new HashSet<>();
-
+        
         String[] cookieNames = {
             properties.getProperty("cookie-agreed-categories-name"), 
             properties.getProperty("cookie-agreed-version-name"),
@@ -237,13 +216,38 @@ public class CgiTest {
             properties.getProperty("_ga_LC0YVRL587-name"),
             properties.getProperty("_gid-name")
         };
-
+        
         for (String cookieName : cookieNames) {
             cookies.add(new Cookie(cookieName, properties.getProperty(cookieName)));
         }
-
-        return cookies;
-
+        
+        // Add those cookies to the webdrivers
+        for (Cookie cookie : cookies) {
+            log.debug("Cookie pair added: {}={}", cookie.getName(), cookie.getValue());
+            options.addCookie(cookie);
+        }
+        
+        // Refresh the page
+        driver.navigate().refresh();
+        
     }
-
+    
+    /**
+     * Switches the website language to the desired one
+     * @param language Desired language
+     */
+    private void switchToLanguage(String language) {
+        driver.findElement(By.id(properties.getProperty("language-switcher-div-id"))).click();
+        driver.findElement(By.linkText(language)).click();
+    }
+    
+    /**
+     * Asserts that the language of website is the one that it should be
+     * @param language The language of interest
+     */
+    private void assertLanguage(String language) {
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(language);
+        assertThat(driver.findElement(By.id(properties.getProperty("language-switcher-div-id"))).getText()).isEqualToIgnoringCase(language);
+    }
+    
 }
