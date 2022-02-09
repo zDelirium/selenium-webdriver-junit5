@@ -32,7 +32,6 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 public class CgiTest {
 
     WebDriver driver;
-    WebDriverWait wait;
     Properties properties;
     
     static final Logger log = getLogger(lookup().lookupClass());
@@ -42,6 +41,7 @@ public class CgiTest {
      */
     @BeforeAll
     static void setupClass() {
+
         WebDriverManager.chromedriver().setup();
 
     }
@@ -52,6 +52,7 @@ public class CgiTest {
      */
     @BeforeEach
     void setup() throws IOException {
+        
         // Load variables from properties file
         InputStream resourceAsStream = this.getClass().getResourceAsStream("/cgi-test-config.properties");
         properties = new Properties();
@@ -72,6 +73,7 @@ public class CgiTest {
      */
     @Test
     public void testAcceptAllCGICookies() {
+
         Options options = driver.manage();
 
         // Get the number of cookies before accepting all cookies
@@ -119,6 +121,7 @@ public class CgiTest {
 
         // Assert that all non-required cookies were declined
         assertThat(options.getCookieNamed(properties.getProperty("cookie-agreed-name")).getValue()).isEqualTo(properties.getProperty("cookie-not-agreed-value"));
+
     }
 
     /**
@@ -128,6 +131,7 @@ public class CgiTest {
      */
     @Test
     public void testAccessCGINoCookiePopup() throws NumberFormatException, InterruptedException {
+
         // Go to cgi.com homepage
         driver.get(properties.getProperty("sut-url"));
 
@@ -143,7 +147,7 @@ public class CgiTest {
         driver.navigate().refresh();
 
         // Wait and assert that the cookie popup does not appear
-        Thread.sleep(Long.parseLong(properties.getProperty("default-sleep-time")));
+        Thread.sleep(Duration.ofSeconds(Integer.parseInt(properties.getProperty("default-sleep-time"))).toMillis());
         assertThat(driver.findElements(By.id(properties.getProperty("cookie-popup-id")))).isEmpty();;
 
     }
@@ -155,10 +159,9 @@ public class CgiTest {
     @Test
     public void testFrenchTranslation() {
 
-        String enLang = "en", frLang = "fr";
+        String enLang = "en-lang", frLang = "fr-lang";
         String languageSwitcherDivElement = "language-switcher-div-id";
         String switchToFRText = "switch-to-fr-link-text";
-
 
         // Go to cgi.com
         driver.get(properties.getProperty("sut-url"));
@@ -167,14 +170,14 @@ public class CgiTest {
         driver.findElement(By.xpath(properties.getProperty("accept-cookies-button-xpath"))).click();
 
         // Assert that current language is English
-        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(enLang);
-        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(enLang);
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(enLang));
+        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(properties.getProperty(enLang));
 
         // Switch to French and assert that it did so
         driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).click();
         driver.findElement(By.linkText(properties.getProperty(switchToFRText))).click();
-        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(frLang);
-        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(frLang);
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(frLang));
+        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(properties.getProperty(frLang));
 
         // Make a search (in French)
         driver.findElement(By.xpath(properties.getProperty("main-navbar-expand-search-bar-button-xpath"))).click();
@@ -187,8 +190,9 @@ public class CgiTest {
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id(properties.getProperty("search-results-div-id"))));
 
         // Assert that it is still in French
-        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(frLang);
-        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(frLang);
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(frLang));
+        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(properties.getProperty(frLang));
+
     }
 
     /**
@@ -196,9 +200,10 @@ public class CgiTest {
      */
     @AfterEach
     void teardown() {
+
         properties = null;
-        wait = null;
         driver.quit();
+
     }
 
     /**
@@ -207,6 +212,7 @@ public class CgiTest {
      * @return A set of all accepted cgi cookies
      */
     private Set<Cookie> setupCookies() {
+
         Set<Cookie> cookies = new HashSet<>();
 
         String[] cookieNames = {
@@ -228,7 +234,7 @@ public class CgiTest {
         }
 
         return cookies;
+
     }
 
-    
 }
