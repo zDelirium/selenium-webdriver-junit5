@@ -3,7 +3,6 @@ package com.xyzcorp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
@@ -20,10 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.WebDriver.Options;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -35,6 +32,7 @@ public class CgiTest {
 
     WebDriver driver;
     Properties properties;
+    CGIPage cgiPage;
     
     static final Logger log = getLogger(lookup().lookupClass());
     
@@ -43,9 +41,7 @@ public class CgiTest {
      */
     @BeforeAll
     static void setupClass() {
-        
         WebDriverManager.chromedriver().setup();
-        
     }
     
     /**
@@ -63,6 +59,9 @@ public class CgiTest {
         // Maximise window of a new ChromeDriver instance
         driver = new ChromeDriver();
         driver.manage().window().maximize();
+
+        // Instantiate cgi page object
+        cgiPage = new CGIPage(driver, properties);
         
         // Go to cgi.com homepage
         driver.get(properties.getProperty("sut-url"));
@@ -75,9 +74,9 @@ public class CgiTest {
     @AfterEach
     void teardown() {
     
-        if (properties != null) {
-            properties = null;
-        }
+        // if (properties != null) {
+        //     properties = null;
+        // }
         if (driver != null) {
             driver.quit();
         }
@@ -149,7 +148,7 @@ public class CgiTest {
     @Test
     public void testAccessCGINoCookiePopup() throws NumberFormatException, InterruptedException {
 
-        bypassCookiesPopup();
+        cgiPage.bypassCookiesPopup();
 
         // Wait and assert that the cookie popup does not appear
         Thread.sleep(Duration.ofSeconds(Integer.parseInt(properties.getProperty("default-sleep-time"))).toMillis());
@@ -157,7 +156,6 @@ public class CgiTest {
 
     }
 
-    
     /**
      * Goes to CGI.com, validates that it starts in English, switch to French,
      * makes a search and validates that the page is still in French
@@ -167,21 +165,17 @@ public class CgiTest {
 
         String enLang = "en-lang", frLang = "fr-lang";
         
-        // Bypass cookies 
-        bypassCookiesPopup();
+        cgiPage.bypassCookiesPopup();
         
         // Assert that current language is English
         assertLanguage(properties.getProperty(enLang));
         
-        // Switch to French and assert that it did so
-        switchToLanguage(properties.getProperty("switch-to-fr-link-text"));
+        // Switch to French and assert that it did so 
+        cgiPage.switchToLanguage(properties.getProperty("switch-to-fr-link-text"));
         assertLanguage(properties.getProperty(frLang));
         
         // Make a search (in French)
-        driver.findElement(By.xpath(properties.getProperty("main-navbar-expand-search-bar-button-xpath"))).click();
-        WebElement searchBar = driver.findElement(By.id(properties.getProperty("main-navbar-search-bar-input-id")));
-        searchBar.sendKeys(properties.getProperty("fr-search-value"));
-        searchBar.sendKeys(Keys.ENTER);
+        cgiPage.search(properties.getProperty("fr-search-value"));
         
         // Wait until the search results div load
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(Integer.parseInt(properties.getProperty("default-max-wait-time"))));
@@ -192,55 +186,6 @@ public class CgiTest {
         
     }
 
-    
-    /**
-     * Bypasses the cookie popup window by adding the cookies to the webdriver manually
-     */
-    private void bypassCookiesPopup() {
-        
-        Options options = driver.manage();
-        
-        // Setup the necessary cookies manually
-        Set<Cookie> cookies = new HashSet<>();
-        
-        String[] cookieNames = {
-            properties.getProperty("cookie-agreed-categories-name"), 
-            properties.getProperty("cookie-agreed-version-name"),
-            properties.getProperty("RT-name"),
-            properties.getProperty("AKA_A2-name"),
-            properties.getProperty("_gat_UA-399437-1-name"),
-            properties.getProperty("cookie-agreed-name"),
-            properties.getProperty("_ga-name"),
-            properties.getProperty("_fbp-name"),
-            properties.getProperty("language-name"),
-            properties.getProperty("_ga_LC0YVRL587-name"),
-            properties.getProperty("_gid-name")
-        };
-        
-        for (String cookieName : cookieNames) {
-            cookies.add(new Cookie(cookieName, properties.getProperty(cookieName)));
-        }
-        
-        // Add those cookies to the webdrivers
-        for (Cookie cookie : cookies) {
-            log.debug("Cookie pair added: {}={}", cookie.getName(), cookie.getValue());
-            options.addCookie(cookie);
-        }
-        
-        // Refresh the page
-        driver.navigate().refresh();
-        
-    }
-    
-    /**
-     * Switches the website language to the desired one
-     * @param language Desired language
-     */
-    private void switchToLanguage(String language) {
-        driver.findElement(By.id(properties.getProperty("language-switcher-div-id"))).click();
-        driver.findElement(By.linkText(language)).click();
-    }
-    
     /**
      * Asserts that the language of website is the one that it should be
      * @param language The language of interest
