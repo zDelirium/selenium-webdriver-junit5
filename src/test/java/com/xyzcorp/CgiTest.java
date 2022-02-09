@@ -37,36 +37,51 @@ public class CgiTest {
     Properties properties;
     
     static final Logger log = getLogger(lookup().lookupClass());
-
+    
     /**
      * Sets up the appropriate chromedriver version
      */
     @BeforeAll
     static void setupClass() {
-
+        
         WebDriverManager.chromedriver().setup();
-
+        
     }
-
+    
     /**
      * Creates a Properties object containing configuration variables and a new ChromeDriver instance that
      * @throws IOException if the config file does not exist at the expected location
      */
     @BeforeEach
     void setup() throws IOException {
-
+        
         // Load variables from properties file
         InputStream resourceAsStream = this.getClass().getResourceAsStream("/cgi-test-config.properties");
         properties = new Properties();
         properties.load(resourceAsStream);
-    
+        
         // Maximise window of a new ChromeDriver instance
         driver = new ChromeDriver();
         driver.manage().window().maximize();
-
+        
         // Go to cgi.com homepage
         driver.get(properties.getProperty("sut-url"));
-
+        
+    }
+    
+    /**
+     * Closes down every test as to minimize memory management risks
+     */
+    @AfterEach
+    void teardown() {
+    
+        if (properties != null) {
+            properties = null;
+        }
+        if (driver != null) {
+            driver.quit();
+        }
+    
     }
 
     /**
@@ -134,9 +149,6 @@ public class CgiTest {
     @Test
     public void testAccessCGINoCookiePopup() throws NumberFormatException, InterruptedException {
 
-        // Go to cgi.com homepage
-        driver.get(properties.getProperty("sut-url"));
-
         Options options = driver.manage();
         // Add all the necessary cookies
         Set<Cookie> cookies = setupCookies();
@@ -172,14 +184,12 @@ public class CgiTest {
         driver.findElement(By.xpath(properties.getProperty("accept-cookies-button-xpath"))).click();
 
         // Assert that current language is English
-        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(enLang));
-        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(properties.getProperty(enLang));
+        assertLanguage(enLang);
 
         // Switch to French and assert that it did so
         driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).click();
         driver.findElement(By.linkText(properties.getProperty(switchToFRText))).click();
-        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(frLang));
-        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(properties.getProperty(frLang));
+        assertLanguage(frLang);
 
         // Make a search (in French)
         driver.findElement(By.xpath(properties.getProperty("main-navbar-expand-search-bar-button-xpath"))).click();
@@ -192,24 +202,17 @@ public class CgiTest {
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id(properties.getProperty("search-results-div-id"))));
 
         // Assert that it is still in French
-        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(frLang));
-        assertThat(driver.findElement(By.id(properties.getProperty(languageSwitcherDivElement))).getText()).isEqualToIgnoringCase(properties.getProperty(frLang));
+        assertLanguage(frLang);
 
     }
 
     /**
-     * Closes down every test as to minimize memory management risks
+     * Asserts that the language of website is the one that it should be
+     * @param lang The language of interest
      */
-    @AfterEach
-    void teardown() {
-
-        if (properties != null) {
-            properties = null;
-        }
-        if (driver != null) {
-            driver.quit();
-        }
-
+    private void assertLanguage(String lang) {
+        assertThat(driver.getCurrentUrl().split("/")[3]).isEqualTo(properties.getProperty(lang));
+        assertThat(driver.findElement(By.id(properties.getProperty("language-switcher-div-id"))).getText()).isEqualToIgnoringCase(properties.getProperty(lang));
     }
 
     /**
