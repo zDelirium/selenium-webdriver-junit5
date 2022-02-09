@@ -12,6 +12,7 @@ import static java.lang.invoke.MethodHandles.lookup;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.WebDriver.Options;
@@ -52,7 +54,7 @@ public class CgiTest {
      */
     @BeforeEach
     void setup() throws IOException {
-        
+
         // Load variables from properties file
         InputStream resourceAsStream = this.getClass().getResourceAsStream("/cgi-test-config.properties");
         properties = new Properties();
@@ -148,7 +150,7 @@ public class CgiTest {
 
         // Wait and assert that the cookie popup does not appear
         Thread.sleep(Duration.ofSeconds(Integer.parseInt(properties.getProperty("default-sleep-time"))).toMillis());
-        assertThat(driver.findElements(By.id(properties.getProperty("cookie-popup-id")))).isEmpty();;
+        assertThatThrownBy(() -> driver.findElement(By.id(properties.getProperty("cookie-popup-id")))).isInstanceOf(NoSuchElementException.class);
 
     }
 
@@ -196,13 +198,17 @@ public class CgiTest {
     }
 
     /**
-     * Closes down every test as to minimize memory management risk
+     * Closes down every test as to minimize memory management risks
      */
     @AfterEach
     void teardown() {
 
-        properties = null;
-        driver.quit();
+        if (properties != null) {
+            properties = null;
+        }
+        if (driver != null) {
+            driver.quit();
+        }
 
     }
 
